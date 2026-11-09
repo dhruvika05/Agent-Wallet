@@ -1,0 +1,24 @@
+# Environment variables
+.env
+.env.*
+
+# Allow the example file
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# Database
+*.db
+
+# Frontend
+node_modules/
+dist/
+
+# IDE
+.vscode/
+.DS_Store

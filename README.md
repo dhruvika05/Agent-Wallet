@@ -45,3 +45,11 @@ Coming soon.
 License
 
 This project is licensed under the MIT License.
+
+PayPal Sandbox Configuration
+
+The PayPal Payouts integration is tested using US-based PayPal Sandbox accounts because Payouts API availability depends on the sender account’s country or region.
+
+Our initial India-based Sandbox account returned PAYOUT_NOT_AVAILABLE. We resolved this by creating a US-based Sandbox Business account and linking a new REST API application to it.
+
+All payment testing is performed using simulated Sandbox funds. No real money is transferred.

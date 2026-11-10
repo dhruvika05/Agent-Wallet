@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from config import FRONTEND_ORIGIN
 
 app = FastAPI(
     title="Agent Wallet API",
@@ -12,7 +13,7 @@ app = FastAPI(
 # Before deploying, add your real frontend URL to this list.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=["FRONTEND_ORIGIN"],
     allow_methods=["*"],
     allow_headers=["*"],
 )

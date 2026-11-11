@@ -47,3 +47,7 @@ app.include_router(payments_router)
 from admin import router as admin_router
 
 app.include_router(admin_router)
+
+from dashboard_api import router as dashboard_router
+
+app.include_router(dashboard_router)

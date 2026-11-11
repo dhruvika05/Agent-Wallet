@@ -10,7 +10,7 @@ from auth import require_admin
 from db import get_db
 from models import Agent, AgentStatus, PaymentRequest, RequestStatus, utcnow
 from payments import build_history, log, to_out
-from paypal_client import PayPalError, send_payout
+from paypal_client import PayPalError, get_payout_batch, send_payout
 from policy_engine import Limits, Outcome, PaymentInput, evaluate
 from schemas import PaymentRequestOut
 
@@ -158,3 +158,71 @@ def freeze(agent_id: int, db: Session = Depends(get_db)):
 @router.post("/agents/{agent_id}/unfreeze")
 def unfreeze(agent_id: int, db: Session = Depends(get_db)):
     return set_agent_status(db, agent_id, AgentStatus.ACTIVE, "AGENT_UNFROZEN")
+
+# ---------- payout status refresh ----------
+# Verify these status names in the PayPal Payouts docs. They are my best knowledge.
+ITEM_PAID = {"SUCCESS"}
+ITEM_FAILED = {"FAILED", "BLOCKED", "RETURNED", "REFUNDED", "REVERSED", "DENIED"}
+BATCH_FAILED = {"DENIED", "CANCELED"}
+
+
+def interpret(batch_status, item_status) -> Optional[str]:
+    """Turn PayPal's statuses into ours. None means 'still waiting'
+    (PENDING, ONHOLD, UNCLAIMED and similar stay PROCESSING)."""
+    if item_status in ITEM_PAID:
+        return RequestStatus.PAID
+    if item_status in ITEM_FAILED or batch_status in BATCH_FAILED:
+        return RequestStatus.FAILED
+    return None
+
+
+async def refresh_one(db: Session, req: PaymentRequest) -> PaymentRequest:
+    if req.status != RequestStatus.PROCESSING or not req.paypal_batch_id:
+        return req
+    try:
+        info = await get_payout_batch(req.paypal_batch_id)
+    except PayPalError as e:
+        log(db, "PAYPAL_STATUS_ERROR", req.agent_id, req.id,
+            http_status=str(e.status_code), body=str(e.body)[:300])
+        db.commit()
+        return req
+    except httpx.HTTPError as e:
+        log(db, "PAYPAL_STATUS_ERROR", req.agent_id, req.id, error=type(e).__name__)
+        db.commit()
+        return req
+
+    if info["item_id"]:
+        req.paypal_item_id = info["item_id"]
+
+    new_status = interpret(info["batch_status"], info["item_status"])
+    if new_status and claim(db, req.id, RequestStatus.PROCESSING, new_status):
+        db.refresh(req)
+        log(db, "PAYOUT_PAID" if new_status == RequestStatus.PAID else "PAYOUT_FAILED",
+            req.agent_id, req.id, batch_status=str(info["batch_status"]),
+            item_status=str(info["item_status"]))
+    db.commit()
+    db.refresh(req)
+    return req
+
+
+@router.post("/payment-requests/{request_id}/refresh", response_model=PaymentRequestOut)
+async def refresh_request(request_id: int, db: Session = Depends(get_db)):
+    req = get_request_or_404(db, request_id)
+    return to_out(await refresh_one(db, req))
+
+
+@router.post("/payment-requests-refresh-all")
+async def refresh_all(db: Session = Depends(get_db)):
+    waiting = (
+        db.query(PaymentRequest)
+        .filter(PaymentRequest.status == RequestStatus.PROCESSING,
+                PaymentRequest.paypal_batch_id.isnot(None))
+        .all()
+    )
+    paid = failed = 0
+    for req in waiting:
+        updated = await refresh_one(db, req)
+        paid += updated.status == RequestStatus.PAID
+        failed += updated.status == RequestStatus.FAILED
+    return {"checked": len(waiting), "paid": paid, "failed": failed,
+            "still_processing": len(waiting) - paid - failed}

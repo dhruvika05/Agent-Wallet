@@ -117,3 +117,25 @@ async def send_payout(
         "batch_status": header.get("batch_status"),  # usually PENDING at first
         "raw": data,
     }
+
+async def get_payout_batch(batch_id: str) -> dict:
+    """Ask PayPal for the current status of a payout batch (we send one item per batch)."""
+    token = await get_access_token()
+
+    async with httpx.AsyncClient(timeout=TIMEOUT) as client:
+        response = await client.get(
+            f"{BASE}/v1/payments/payouts/{batch_id}",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+
+    if response.status_code != 200:
+        raise PayPalError(response.status_code, response.text)
+
+    data = response.json()
+    items = data.get("items") or []
+    item = items[0] if items else {}
+    return {
+        "batch_status": data.get("batch_header", {}).get("batch_status"),
+        "item_status": item.get("transaction_status"),
+        "item_id": item.get("payout_item_id"),
+    }

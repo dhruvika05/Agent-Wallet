@@ -27,3 +27,15 @@ def home():
 @app.get("/health")
 def health_check():
     return {"status": "healthy"}
+
+from fastapi import Depends
+from auth import get_current_agent, require_admin
+from models import Agent
+
+@app.get("/v1/whoami")
+def whoami(agent: Agent = Depends(get_current_agent)):
+    return {"id": agent.id, "name": agent.name, "status": agent.status}
+
+@app.get("/v1/admin-check", dependencies=[Depends(require_admin)])
+def admin_check():
+    return {"admin": True}

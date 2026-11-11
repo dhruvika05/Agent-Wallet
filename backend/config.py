@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 # On Render you set env vars in the dashboard instead, and this does nothing.
 load_dotenv()
 
+ADMIN_API_KEY = os.getenv("ADMIN_API_KEY")  # protects dashboard actions (approve, freeze, policy edits)
 # Database
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./agent_wallet.db")
 

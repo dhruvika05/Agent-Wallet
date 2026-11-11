@@ -22,3 +22,5 @@ dist/
 # IDE
 .vscode/
 .DS_Store
+
+agent_demo/.env

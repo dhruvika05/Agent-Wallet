@@ -43,3 +43,7 @@ def admin_check():
 from payments import router as payments_router
 
 app.include_router(payments_router)
+
+from admin import router as admin_router
+
+app.include_router(admin_router)

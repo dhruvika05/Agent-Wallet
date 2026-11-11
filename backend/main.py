@@ -39,3 +39,7 @@ def whoami(agent: Agent = Depends(get_current_agent)):
 @app.get("/v1/admin-check", dependencies=[Depends(require_admin)])
 def admin_check():
     return {"admin": True}
+
+from payments import router as payments_router
+
+app.include_router(payments_router)

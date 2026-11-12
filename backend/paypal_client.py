@@ -57,13 +57,13 @@ async def get_access_token() -> str:
 
 
 async def send_payout(
-    request_id: int,
+    request_id: str,
     receiver_email: str,
     amount: Decimal,
     currency: str = "USD",
     note: str = "Agent Wallet payout",
 ) -> dict:
-    """Send ONE payout. request_id is the payment_requests.id from your database.
+    """Send ONE payout. a unique reference for the request.
 
     Using request_id makes retries safe: the same request always produces the
     same batch ID, so PayPal won't pay twice.

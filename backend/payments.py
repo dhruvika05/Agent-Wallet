@@ -88,6 +88,10 @@ def to_decimal(value) -> Decimal:
     return Decimal(str(value or 0))
 
 
+def payout_ref(req: PaymentRequest) -> str:
+    """Stable for one request, but different after a database reset."""
+    return f"{int(req.created_at.timestamp())}-{req.id}"
+
 def build_history(db: Session, agent_id: int, email: str, amount: Decimal) -> History:
     """Ask the database the questions the policy engine needs answered."""
     now = utcnow()
@@ -210,7 +214,7 @@ async def create_payment_request(
     if decision.outcome == Outcome.ALLOW:
         try:
             result = await send_payout(
-                request_id=req.id,
+                request_id=payout_ref(req),   
                 receiver_email=req.recipient_email,
                 amount=req.amount,
                 currency=req.currency,

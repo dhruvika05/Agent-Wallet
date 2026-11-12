@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from auth import require_admin
 from db import get_db
 from models import Agent, AgentStatus, PaymentRequest, RequestStatus, utcnow
-from payments import build_history, log, to_out
+from payments import build_history, log, payout_ref, to_out
 from paypal_client import PayPalError, get_payout_batch, send_payout
 from policy_engine import Limits, Outcome, PaymentInput, evaluate
 from schemas import PaymentRequestOut
@@ -101,7 +101,7 @@ async def approve(request_id: int, db: Session = Depends(get_db)):
 
     try:
         result = await send_payout(
-            request_id=req.id,
+            request_id=payout_ref(req),   # was: request_id=req.id
             receiver_email=req.recipient_email,
             amount=req.amount,
             currency=req.currency,

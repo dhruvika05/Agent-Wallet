@@ -140,9 +140,9 @@ agent-wallet/
 
 ```bash
 git clone https://github.com/dhruvika05/Agent-Wallet 
-cd agent-wallet/backend
+cd Agent-Wallet/backend
 
-python -m venv .venv
+python3 -m venv .venv     # Windows: python -m venv .venv
 source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 

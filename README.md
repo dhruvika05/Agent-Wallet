@@ -139,7 +139,7 @@ agent-wallet/
 ### 1. Backend
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/dhruvika05/Agent-Wallet 
 cd agent-wallet/backend
 
 python -m venv .venv

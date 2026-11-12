@@ -232,6 +232,10 @@ cd backend
 rm agent_wallet.db
 python seed.py "sb-your-vendor@personal.example.com"   # prints a NEW agent key; update agent_demo/.env
 ```
+## Sponsor tools used
+
+- AG Grid Community: the Requests table in the dashboard (sortable, filterable payment list with status badges)
+- No other sponsor tools are used.
 
 ## PayPal sandbox configuration
 
